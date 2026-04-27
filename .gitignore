@@ -1,0 +1,57 @@
+# General
+**/.vscode/
+**/*.user
+**/*.suo
+**/*.userosscache
+**/*.sln.docstates
+
+# Build results
+**/bin/
+**/obj/
+**/[Bb]uild/
+**/[Ll]og/
+**/*.log
+
+# NuGet
+**/*.nupkg
+**/.nuget/
+**/packages/
+**/project.lock.json
+**/project.fragment.lock.json
+
+# Visual Studio
+**/*.vs/
+**/*.csproj.user
+
+# Resharper
+**/_ReSharper*/
+**/*.ReSharper
+**/*.DotSettings.user
+
+# Dotnet CLI
+**/*.deps.json
+**/*.runtimeconfig.json
+
+# Environment
+**/.env
+
+# Metadata
+/.cursor/
+/.cursorrules
+/.env producc
+
+# macOS
+**/.DS_Store
+
+# Rider IDE
+**/.idea/
+Documentos
+
+reports
+
+**/certs
+
+# Migration report
+UpgradeLog*.htm
+UpgradeLog*.xml
+_UpgradeReport_Files/

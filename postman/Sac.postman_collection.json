@@ -1,0 +1,460 @@
+{
+  "info": {
+    "name": "SAC API",
+    "description": "Colección completa del Sistema Académico Cayzedo (SAC). Todos los endpoints son REST/JSON.\n\n**Autenticación**\n- Variables `DIRECTOR_TOKEN` y `DOCENTE_TOKEN` se rellenan automáticamente al ejecutar los endpoints `Auth → Login Director` y `Auth → Login Docente`.\n- Por defecto, la colección usa `DIRECTOR_TOKEN` (Bearer a nivel de colección).\n- Las carpetas `Actividades` y `Calificaciones` sobreescriben la auth para usar `DOCENTE_TOKEN` (HU-08, HU-09 son acciones del Docente).\n\n**Modelo de porcentajes**\n- El **porcentaje vive en la actividad**, no en la calificación.\n- Cada actividad debe valer entre **1% y 100%**.\n- La **suma de porcentajes de todas las actividades activas de un curso** no puede superar **100%**.\n- Las calificaciones solo registran la **nota** (1.0 - 5.0).",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_postman_id": "a1b2c3d4-e5f6-7890-abcd-ef0123456789"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [{ "key": "token", "value": "{{DIRECTOR_TOKEN}}", "type": "string" }]
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:8080/api/v1" },
+    { "key": "DIRECTOR_TOKEN", "value": "" },
+    { "key": "DOCENTE_TOKEN", "value": "" }
+  ],
+  "item": [
+    {
+      "name": "Auth",
+      "description": "HU-01 / RF-01 — Inicio de sesión por cédula y contraseña. Cada request guarda su token en la variable de colección correspondiente.",
+      "item": [
+        {
+          "name": "Login Director",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "var json = pm.response.json();",
+                  "if (json && json.data && json.data.token) {",
+                  "    pm.collectionVariables.set('DIRECTOR_TOKEN', json.data.token);",
+                  "    console.log('DIRECTOR_TOKEN guardado.');",
+                  "} else {",
+                  "    console.warn('Login Director: la respuesta no contiene token.');",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"cedula\": \"1000000000\",\n  \"password\": \"CambiarEstoYa123\"\n}"
+            },
+            "url": "{{baseUrl}}/auth/login"
+          }
+        },
+        {
+          "name": "Login Docente",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "var json = pm.response.json();",
+                  "if (json && json.data && json.data.token) {",
+                  "    pm.collectionVariables.set('DOCENTE_TOKEN', json.data.token);",
+                  "    console.log('DOCENTE_TOKEN guardado.');",
+                  "} else {",
+                  "    console.warn('Login Docente: la respuesta no contiene token.');",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"cedula\": \"1234567890\",\n  \"password\": \"docente123\"\n}"
+            },
+            "url": "{{baseUrl}}/auth/login"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Docentes",
+      "description": "HU-02 / RF-02 — Gestión de docentes. CRUD ejecutado por el Director.",
+      "item": [
+        {
+          "name": "Crear Docente",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"nombreCompleto\": \"María Pérez\",\n  \"cedula\": \"1234567890\",\n  \"correo\": \"maria.perez@colegio.edu\",\n  \"password\": \"docente123\"\n}" },
+            "url": "{{baseUrl}}/docentes"
+          }
+        },
+        {
+          "name": "Listar Docentes",
+          "request": { "method": "GET", "url": "{{baseUrl}}/docentes?pageIndex=0&pageSize=20" }
+        },
+        {
+          "name": "Obtener Docente por ID",
+          "request": { "method": "GET", "url": "{{baseUrl}}/docentes/1" }
+        },
+        {
+          "name": "Actualizar Docente",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"nombreCompleto\": \"María Pérez García\",\n  \"correo\": \"maria.perez@colegio.edu\"\n}" },
+            "url": "{{baseUrl}}/docentes/1"
+          }
+        },
+        {
+          "name": "Eliminar Docente",
+          "request": { "method": "DELETE", "url": "{{baseUrl}}/docentes/1" }
+        }
+      ]
+    },
+    {
+      "name": "Estudiantes",
+      "description": "HU-03 / RF-02 — Registro de estudiantes (CRUD + lote). Solo Director.",
+      "item": [
+        {
+          "name": "Crear Estudiante",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"nombreCompleto\": \"Juan Estudiante\",\n  \"cedula\": \"1100200300\",\n  \"correo\": \"juan.estudiante@colegio.edu\"\n}" },
+            "url": "{{baseUrl}}/estudiantes"
+          }
+        },
+        {
+          "name": "Crear Estudiantes en Lote",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "[\n  { \"nombreCompleto\": \"Ana López\", \"cedula\": \"1100200301\", \"correo\": \"ana.lopez@colegio.edu\" },\n  { \"nombreCompleto\": \"Luis Martínez\", \"cedula\": \"1100200302\", \"correo\": \"luis.martinez@colegio.edu\" },\n  { \"nombreCompleto\": \"Sofía Ramírez\", \"cedula\": \"1100200303\", \"correo\": \"sofia.ramirez@colegio.edu\" }\n]" },
+            "url": "{{baseUrl}}/estudiantes/lote"
+          }
+        },
+        {
+          "name": "Listar Estudiantes",
+          "request": { "method": "GET", "url": "{{baseUrl}}/estudiantes?pageIndex=0&pageSize=20" }
+        },
+        {
+          "name": "Obtener Estudiante por ID",
+          "request": { "method": "GET", "url": "{{baseUrl}}/estudiantes/1" }
+        },
+        {
+          "name": "Actualizar Estudiante",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"nombreCompleto\": \"Juan Estudiante Pérez\",\n  \"correo\": \"juan.estudiante@colegio.edu\"\n}" },
+            "url": "{{baseUrl}}/estudiantes/1"
+          }
+        },
+        {
+          "name": "Eliminar Estudiante",
+          "request": { "method": "DELETE", "url": "{{baseUrl}}/estudiantes/1" }
+        }
+      ]
+    },
+    {
+      "name": "Grados",
+      "description": "HU-04 / RF-03 — Catálogo de grados.",
+      "item": [
+        {
+          "name": "Crear Grado",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"nombre\": \"6-1\",\n  \"descripcion\": \"Sexto grado, grupo 1\"\n}" },
+            "url": "{{baseUrl}}/grados"
+          }
+        },
+        {
+          "name": "Listar Grados",
+          "request": { "method": "GET", "url": "{{baseUrl}}/grados?soloActivos=true" }
+        },
+        {
+          "name": "Obtener Grado por ID",
+          "request": { "method": "GET", "url": "{{baseUrl}}/grados/1" }
+        },
+        {
+          "name": "Actualizar Grado",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"nombre\": \"6-1\",\n  \"descripcion\": \"Sexto grado, sección 1\"\n}" },
+            "url": "{{baseUrl}}/grados/1"
+          }
+        },
+        {
+          "name": "Eliminar Grado",
+          "request": { "method": "DELETE", "url": "{{baseUrl}}/grados/1" }
+        }
+      ]
+    },
+    {
+      "name": "Materias",
+      "description": "HU-05 / RF-03 — Catálogo de materias.",
+      "item": [
+        {
+          "name": "Crear Materia",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"nombre\": \"Matemáticas\",\n  \"descripcion\": \"Asignatura troncal\"\n}" },
+            "url": "{{baseUrl}}/materias"
+          }
+        },
+        {
+          "name": "Listar Materias",
+          "request": { "method": "GET", "url": "{{baseUrl}}/materias?soloActivas=true" }
+        },
+        {
+          "name": "Obtener Materia por ID",
+          "request": { "method": "GET", "url": "{{baseUrl}}/materias/1" }
+        },
+        {
+          "name": "Actualizar Materia",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"nombre\": \"Matemáticas\",\n  \"descripcion\": \"Asignatura troncal del grado\"\n}" },
+            "url": "{{baseUrl}}/materias/1"
+          }
+        },
+        {
+          "name": "Eliminar Materia",
+          "request": { "method": "DELETE", "url": "{{baseUrl}}/materias/1" }
+        }
+      ]
+    },
+    {
+      "name": "Cursos",
+      "description": "HU-06, HU-07, HU-10 / RF-04, RF-05 — Cursos, asignaciones y cierre.",
+      "item": [
+        {
+          "name": "Crear Curso",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"nombre\": \"Matemáticas 6-1 (2026)\",\n  \"gradoId\": 1,\n  \"materiaId\": 1,\n  \"docenteId\": 1,\n  \"anioAcademico\": 2026\n}" },
+            "url": "{{baseUrl}}/cursos"
+          }
+        },
+        {
+          "name": "Listar Cursos",
+          "request": { "method": "GET", "url": "{{baseUrl}}/cursos?pageIndex=0&pageSize=20" }
+        },
+        {
+          "name": "Obtener Curso por ID",
+          "request": { "method": "GET", "url": "{{baseUrl}}/cursos/1" }
+        },
+        {
+          "name": "Actualizar Curso",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"nombre\": \"Matemáticas 6-1\",\n  \"gradoId\": 1,\n  \"materiaId\": 1,\n  \"docenteId\": 1\n}" },
+            "url": "{{baseUrl}}/cursos/1"
+          }
+        },
+        {
+          "name": "Cerrar Curso",
+          "request": { "method": "POST", "url": "{{baseUrl}}/cursos/1/cerrar" }
+        },
+        {
+          "name": "Asignar Estudiante al Curso",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"estudianteId\": 1\n}" },
+            "url": "{{baseUrl}}/cursos/1/estudiantes"
+          }
+        },
+        {
+          "name": "Asignar Estudiantes en Lote al Curso",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"estudianteIds\": [1, 2, 3]\n}" },
+            "url": "{{baseUrl}}/cursos/1/estudiantes/lote"
+          }
+        },
+        {
+          "name": "Quitar Estudiante del Curso",
+          "request": { "method": "DELETE", "url": "{{baseUrl}}/cursos/1/estudiantes/1" }
+        },
+        {
+          "name": "Listar Estudiantes del Curso",
+          "request": { "method": "GET", "url": "{{baseUrl}}/cursos/1/estudiantes" }
+        }
+      ]
+    },
+    {
+      "name": "Periodos",
+      "description": "HU-10 / RF-06 — Periodos académicos (3 cortes auto-creados con el curso).",
+      "item": [
+        {
+          "name": "Listar Periodos del Curso",
+          "request": { "method": "GET", "url": "{{baseUrl}}/periodos/curso/1" }
+        },
+        {
+          "name": "Obtener Periodo por ID",
+          "request": { "method": "GET", "url": "{{baseUrl}}/periodos/1" }
+        },
+        {
+          "name": "Cerrar Periodo",
+          "request": { "method": "POST", "url": "{{baseUrl}}/periodos/1/cerrar" }
+        },
+        {
+          "name": "Reabrir Periodo",
+          "request": { "method": "POST", "url": "{{baseUrl}}/periodos/1/reabrir" }
+        }
+      ]
+    },
+    {
+      "name": "Actividades",
+      "description": "HU-08 / RF-07, RF-08 — Crear y gestionar actividades. Cada actividad tiene un porcentaje (1-100%) y la suma de porcentajes de las actividades activas del curso no puede superar 100%.\n\n**Esta carpeta usa DOCENTE_TOKEN.**",
+      "auth": {
+        "type": "bearer",
+        "bearer": [{ "key": "token", "value": "{{DOCENTE_TOKEN}}", "type": "string" }]
+      },
+      "item": [
+        {
+          "name": "Crear Actividad",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"nombre\": \"Quiz Inicial\",\n  \"descripcion\": \"Diagnóstico semana 1\",\n  \"cursoId\": 1,\n  \"periodoId\": 1,\n  \"porcentaje\": 30\n}" },
+            "url": "{{baseUrl}}/actividades"
+          }
+        },
+        {
+          "name": "Listar Actividades del Curso",
+          "request": { "method": "GET", "url": "{{baseUrl}}/actividades?cursoId=1" }
+        },
+        {
+          "name": "Listar Actividades del Periodo",
+          "request": { "method": "GET", "url": "{{baseUrl}}/actividades?cursoId=1&periodoId=1" }
+        },
+        {
+          "name": "Obtener Actividad por ID",
+          "request": { "method": "GET", "url": "{{baseUrl}}/actividades/1" }
+        },
+        {
+          "name": "Actualizar Actividad",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"nombre\": \"Quiz Inicial Reformulado\",\n  \"descripcion\": \"Diagnóstico semana 1 - versión revisada\",\n  \"porcentaje\": 25\n}" },
+            "url": "{{baseUrl}}/actividades/1"
+          }
+        },
+        {
+          "name": "Eliminar Actividad",
+          "request": { "method": "DELETE", "url": "{{baseUrl}}/actividades/1" }
+        }
+      ]
+    },
+    {
+      "name": "Calificaciones",
+      "description": "HU-09 / RF-08, RF-09 — Registro de calificaciones (rango 1.0-5.0). El porcentaje no se envía aquí: vive en la actividad.\n\n**Esta carpeta usa DOCENTE_TOKEN.**",
+      "auth": {
+        "type": "bearer",
+        "bearer": [{ "key": "token", "value": "{{DOCENTE_TOKEN}}", "type": "string" }]
+      },
+      "item": [
+        {
+          "name": "Crear Calificación",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"estudianteId\": 1,\n  \"actividadId\": 1,\n  \"cursoId\": 1,\n  \"periodoId\": 1,\n  \"nota\": 4.5\n}" },
+            "url": "{{baseUrl}}/calificaciones"
+          }
+        },
+        {
+          "name": "Listar Calificaciones (filtros)",
+          "request": { "method": "GET", "url": "{{baseUrl}}/calificaciones?cursoId=1&periodoId=1" }
+        },
+        {
+          "name": "Listar Calificaciones por Estudiante",
+          "request": { "method": "GET", "url": "{{baseUrl}}/calificaciones?cursoId=1&estudianteId=1" }
+        },
+        {
+          "name": "Obtener Calificación por ID",
+          "request": { "method": "GET", "url": "{{baseUrl}}/calificaciones/1" }
+        },
+        {
+          "name": "Actualizar Calificación",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"nota\": 4.7\n}" },
+            "url": "{{baseUrl}}/calificaciones/1"
+          }
+        },
+        {
+          "name": "Eliminar Calificación",
+          "request": { "method": "DELETE", "url": "{{baseUrl}}/calificaciones/1" }
+        }
+      ]
+    },
+    {
+      "name": "Reportes",
+      "description": "RF-10 — Reportes de un curso.",
+      "item": [
+        {
+          "name": "Reporte de Estudiante en Curso",
+          "request": { "method": "GET", "url": "{{baseUrl}}/reportes/curso/1/estudiante/1" }
+        },
+        {
+          "name": "Reporte de Curso (todos los estudiantes)",
+          "request": { "method": "GET", "url": "{{baseUrl}}/reportes/curso/1" }
+        },
+        {
+          "name": "Reporte Final de Curso (curso CERRADO)",
+          "request": { "method": "GET", "url": "{{baseUrl}}/reportes/curso/1/final" }
+        }
+      ]
+    },
+    {
+      "name": "Boletines",
+      "description": "HU-11 / RF-11 — Envío de boletines por correo. Solo Director, requiere curso CERRADO.",
+      "item": [
+        {
+          "name": "Enviar Boletines del Curso",
+          "request": { "method": "POST", "url": "{{baseUrl}}/boletines/curso/1/enviar" }
+        },
+        {
+          "name": "Reintentar Envíos Fallidos",
+          "request": { "method": "POST", "url": "{{baseUrl}}/boletines/curso/1/reintentar" }
+        },
+        {
+          "name": "Histórico de Envíos del Curso",
+          "request": { "method": "GET", "url": "{{baseUrl}}/boletines/curso/1" }
+        }
+      ]
+    },
+    {
+      "name": "Health",
+      "description": "Endpoint público para verificar que la API y sus dependencias estén disponibles.",
+      "item": [
+        {
+          "name": "Health Check",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "GET",
+            "url": "{{baseUrl}}/health"
+          }
+        }
+      ]
+    }
+  ]
+}
